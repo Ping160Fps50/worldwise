@@ -42,6 +42,11 @@ function CitiesProvider({ children }) {
     }
   }
 
+  function handleAddCity(newCity) {
+    const isOk = cities.map((city) => city.cityName).includes(newCity.cityName);
+    setCities((cities) => (!isOk ? [...cities, newCity] : cities));
+  }
+
   return (
     <CitiesContext.Provider
       value={{
@@ -50,6 +55,7 @@ function CitiesProvider({ children }) {
         currentCity,
         setCurrentCity,
         getCity,
+        onAddCity: handleAddCity,
       }}
     >
       {children}
