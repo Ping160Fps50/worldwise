@@ -1,9 +1,11 @@
-import { useEffect, useReducer, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useReducer } from "react";
 import { useCities } from "../hooks/useCities";
 import { useUrlPosition } from "../hooks/useUrlPosition";
+import DatePicker from "react-datepicker";
+import { useNavigate } from "react-router-dom";
 
 import styles from "./Form.module.css";
+import "react-datepicker/dist/react-datepicker.css";
 import Button from "./Button";
 import ButtonBack from "./ButtonBack";
 import Spinner from "./Spinner";
@@ -51,7 +53,7 @@ function reducer(state, action) {
 
 function Form() {
   const navigate = useNavigate();
-  const { onAddCity } = useCities();
+  const { onAddCity, isLoading } = useCities();
   const [lat, lng] = useUrlPosition();
   const [
     {
@@ -66,6 +68,7 @@ function Form() {
     dispatch,
   ] = useReducer(reducer, initialState);
   useEffect(() => {
+    if (!lat && !lng) return;
     const fetchCity = async () => {
       try {
         dispatch({ type: "loading", payload: true });
@@ -75,7 +78,6 @@ function Form() {
         const data = await res.json();
         if (!data.countryCode)
           throw new Error("That doesnt seem to be city. click somewhere else ");
-        console.log(data);
         dispatch({
           type: "cityName",
           payload: data.city || data.locality || "",
@@ -92,6 +94,7 @@ function Form() {
   }, [lat, lng]);
 
   function handleNewCity(e) {
+    if (!cityName && !date) return;
     e.preventDefault();
     const newCity = {
       cityName,
@@ -99,18 +102,20 @@ function Form() {
       emoji,
       date,
       notes,
-      position: { lat: lat, lng: lng },
+      position: { lat, lng },
     };
-    console.log(newCity);
-    onAddCity(newCity);
-    navigate("/app/cities");
+    onAddCity(newCity, navigate);
   }
 
   return (
-    <form className={styles.form} onSubmit={handleNewCity}>
+    <form
+      className={`${styles.form} ${isLoading ? styles.loading : ""}`}
+      onSubmit={handleNewCity}
+    >
+      {!lat && !lng && <Message message="Start Clicking The Map" />}
       {isLoadingGeoLocation && !geoCodingError && <Spinner />}
       {geoCodingError && <Message message={geoCodingError} />}
-      {!isLoadingGeoLocation && !geoCodingError && (
+      {!isLoadingGeoLocation && !geoCodingError && lat !== 0 && lng !== 0 && (
         <>
           <div className={styles.row}>
             <label htmlFor="cityName">City name</label>
@@ -126,12 +131,11 @@ function Form() {
 
           <div className={styles.row}>
             <label htmlFor="date">When did you go to {cityName}?</label>
-            <input
+            <DatePicker
               id="date"
-              onChange={(e) =>
-                dispatch({ type: "date", payload: e.target.value })
-              }
-              value={date}
+              selected={date}
+              onChange={(date) => dispatch({ type: "date", payload: date })}
+              dateFormat="dd/MM/yyyy"
             />
           </div>
 

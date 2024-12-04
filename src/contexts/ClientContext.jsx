@@ -42,9 +42,25 @@ function CitiesProvider({ children }) {
     }
   }
 
-  function handleAddCity(newCity) {
+  async function handleAddCity(newCity, navigate) {
     const isOk = cities.map((city) => city.cityName).includes(newCity.cityName);
-    setCities((cities) => (!isOk ? [...cities, newCity] : cities));
+    try {
+      setIsLoading(true);
+      const res = await fetch(`${BASE_URL}/cities`, {
+        method: "POST",
+        body: JSON.stringify(newCity),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await res.json();
+      setCities((cities) => (!isOk ? [...cities, data] : cities));
+    } catch (err) {
+      alert(err);
+    } finally {
+      setIsLoading(false);
+      navigate("/app/cities");
+    }
   }
 
   return (
